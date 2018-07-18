@@ -1,0 +1,14 @@
+"repositories": [
+  {
+    "type": "package",
+    "package": {
+      "name": "absolute/module/note",
+      "version": "dev-master",
+      "source": {
+        "url": "git://github.com/marda/absolute-module-note.git",
+        "type": "git",
+        "reference": "master"
+      }
+    }
+  }
+],
