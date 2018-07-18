@@ -2,7 +2,7 @@
 
 namespace Absolute\Module\Note\Manager;
 
-use Absolute\Manager\BaseCRUDManager;
+use Absolute\Core\Manager\BaseCRUDManager;
 
 class NoteCRUDManager extends BaseCRUDManager 
 {

@@ -4,7 +4,7 @@ namespace Absolute\Module\Note\Presenter;
 
 use Nette\Http\Response;
 use Nette\Application\Responses\JsonResponse;
-use Absolute\Presenter\BaseRestPresenter;
+use Absolute\Core\Presenter\BaseRestPresenter;
 
 class NoteBasePresenter extends BaseRestPresenter
 {

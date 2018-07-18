@@ -3,9 +3,10 @@
 namespace Absolute\Module\Note\Manager;
 
 use Nette\Database\Context;
-use Absolute\Manager\BaseManager;
+use Absolute\Core\Manager\BaseManager;
 use Absolute\Module\Note\Entity\Note;
 use Absolute\Module\User\Manager\UserManager;
+use Absolute\Module\File\Manager\FileManager;
 
 class NoteManager extends BaseManager 
 {
@@ -16,7 +17,8 @@ class NoteManager extends BaseManager
 
   public function __construct(
     Context $database,
-    UserManager $userManager /*,
+    UserManager $userManager,
+    FileManager $fileManager /*,
     \App\Model\TeamManager $teamManager,
     \App\Model\LabelManager $labelManager,
     \App\Model\FileManager $fileManager*/
@@ -24,9 +26,9 @@ class NoteManager extends BaseManager
   {
     parent::__construct($database);
     $this->userManager = $userManager;
+    $this->fileManager = $fileManager;
     //$this->teamManager = $teamManager;
     //$this->labelManager = $labelManager;
-    //$this->fileManager = $fileManager;
   }
 
   /* DB TO ENTITY */
