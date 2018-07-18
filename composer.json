@@ -1,5 +1,5 @@
 {
-  "name": "absolute.app/module-note",
+  "name": "absolute.app/note",
   "description": "Absolute/Module/Note",
   "type": "package",
   "license": ["MIT", "BSD-3-Clause", "GPL-2.0", "GPL-3.0"],
