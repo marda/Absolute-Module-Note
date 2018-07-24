@@ -9,9 +9,9 @@ class DefaultPresenter extends NoteBasePresenter {
 
     /** @var \Absolute\Module\Note\Manager\NoteManager @inject */
     public $noteManager;
-
+    
     /** @var \Absolute\Module\Note\Manager\NoteCRUDManager @inject */
-    public $noteCRUDManager;
+				public $noteCRUDManager;
 
     /** @var \Absolute\Module\Label\Manager\LabelManager @inject */
     public $labelManager;
@@ -44,9 +44,9 @@ class DefaultPresenter extends NoteBasePresenter {
     public function renderLabel($urlId, $urlId2) {
         switch ($this->httpRequest->getMethod()) {
             case 'GET':
-                if (!isset($urlId)) 
-                        $this->badRequest();
-                 else {
+                if (!isset($urlId))
+                    $this->httpResponse->setCode(Response::S400_BAD_REQUEST);
+                else {
                     if (isset($urlId2)) {
                         $this->_getNoteLabelRequest($urlId, $urlId2);
                     } else {
@@ -86,31 +86,30 @@ class DefaultPresenter extends NoteBasePresenter {
         }, $notes);
         $this->httpResponse->setCode(Response::S200_OK);
     }
+
     //LABEL
     private function _getNoteLabelListRequest($idNote) {
         $notesList = $this->labelManager->getNoteList($idNote);
-        if(!$notesList){
+        if (!$notesList) {
             $this->httpResponse->setCode(Response::S404_NOT_FOUND);
-        }else{
+        } else {
             $this->jsonResponse->payload = $notesList;
             $this->httpResponse->setCode(Response::S200_OK);
-            
         }
     }
 
     private function _getNoteLabelRequest($noteId, $labelId) {
-        $ret=$this->labelManager->getNoteItem($noteId,$labelId);
-        if(!$ret){
+        $ret = $this->labelManager->getNoteItem($noteId, $labelId);
+        if (!$ret) {
             $this->httpResponse->setCode(Response::S404_NOT_FOUND);
-        }else{
+        } else {
             $this->jsonResponse->payload = $ret;
             $this->httpResponse->setCode(Response::S200_OK);
-            
         }
     }
 
     private function _postNoteLabelRequest($urlId, $urlId2) {
-        if(!isset($urlId)||!isset($urlId2)){
+        if (!isset($urlId) || !isset($urlId2)) {
             $this->httpResponse->setCode(Response::S400_BAD_REQUEST);
             return;
         }
@@ -125,14 +124,14 @@ class DefaultPresenter extends NoteBasePresenter {
     }
 
     private function _deleteNoteLabelRequest($urlId, $urlId2) {
-        if(!isset($urlId)||!isset($urlId2)){
+        if (!isset($urlId) || !isset($urlId2)) {
             $this->httpResponse->setCode(Response::S400_BAD_REQUEST);
             return;
         }
         $ret = $this->labelManager->labelNoteDelete($urlId, $urlId2);
         if (!$ret) {
             $this->jsonResponse->payload = [];
-            $this->httpResponse->setCode(Response::S500_INTERNAL_SERVER_ERROR);
+            $this->httpResponse->setCode(Response::S404_NOT_FOUND);
         } else {
             $this->jsonResponse->payload = [];
             $this->httpResponse->setCode(Response::S200_OK);
