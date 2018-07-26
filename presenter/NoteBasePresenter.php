@@ -8,23 +8,20 @@ use Absolute\Core\Presenter\BaseRestPresenter;
 
 class NoteBasePresenter extends BaseRestPresenter
 {
-  public function startup() 
-  {
-    parent::startup();
-    if (!$this->user->isAllowed('backend')) 
+
+    public function startup()
     {
-      $this->jsonResponse->payload = (['message' => 'Unauthorized!']);
-      $this->httpResponse->setCode(Response::S401_UNAUTHORIZED);    
-    }  
-  }
+        parent::startup();
+        if (!$this->user->isAllowed('backend'))
+        {
+            $this->jsonResponse->payload = (['message' => 'Unauthorized!']);
+            $this->httpResponse->setCode(Response::S401_UNAUTHORIZED);
+        }
+    }
 
-  // CONTROL
-
-  // HANDLERS
-
-  // SUBMITS
-
-  // VALIDATION
-
-  // COMPONENTS
+    // CONTROL
+    // HANDLERS
+    // SUBMITS
+    // VALIDATION
+    // COMPONENTS
 }
