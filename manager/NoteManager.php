@@ -8,260 +8,259 @@ use Absolute\Module\Note\Entity\Note;
 use Absolute\Module\User\Manager\UserManager;
 use Absolute\Module\File\Manager\FileManager;
 
-class NoteManager extends BaseManager 
+class NoteManager extends BaseManager
 {
-  private $userManager;
-  private $teamManager;
-  private $labelManager;
-  private $fileManager;
 
-  public function __construct(
-    Context $database,
-    UserManager $userManager,
-    FileManager $fileManager /*,
-    \App\Model\TeamManager $teamManager,
-    \App\Model\LabelManager $labelManager,
-    \App\Model\FileManager $fileManager*/
-  )
-  {
-    parent::__construct($database);
-    $this->userManager = $userManager;
-    $this->fileManager = $fileManager;
-    //$this->teamManager = $teamManager;
-    //$this->labelManager = $labelManager;
-  }
+    private $userManager;
+    private $teamManager;
+    private $labelManager;
+    private $fileManager;
 
-  /* DB TO ENTITY */
-
-  public function _getNote($db) 
-  {
-    if ($db == false) 
-      return false;
-
-    $object = new Note($db->id, $db->user_id, $db->title, $db->note, $db->color, $db->reminder, $db->archived, $db->created);
-    if ($db->ref('file')) 
-      $object->setImage($this->fileManager->_getFile($db->ref('file')));
-
-    foreach ($db->related('note_user') as $userDb) 
+    public function __construct(
+    Context $database, UserManager $userManager, FileManager $fileManager /* ,
+      \App\Model\TeamManager $teamManager,
+      \App\Model\LabelManager $labelManager,
+      \App\Model\FileManager $fileManager */
+    )
     {
-      $user = $this->userManager->_getUser($userDb->user);
-      if ($user) 
-        $object->addUser($user);
-    }  
-    foreach ($db->related('note_team') as $teamDb) 
-    {
-      $team = $this->teamManager->_getTeam($teamDb->team);
-      if ($team) 
-        $object->addTeam($team);
-    }   
-    foreach ($db->related('note_category') as $categoryDb) 
-    {
-      $category = $this->teamManager->_getTeam($categoryDb->category);
-      if ($category) 
-        $object->addCategory($category);
-    }    
-    return $object;
-  }   
-
-  /* INTERNAL/EXTERNAL INTERFACE */
-
-  public function _getById($id) 
-  {
-    $resultDb = $this->database->table('note')->get($id);
-    return $this->_getNote($resultDb);
-  }  
-
-  private function _getList() 
-  {
-    $ret = array();
-    $resultDb = $this->database->table('note')->order('created DESC');
-    foreach ($resultDb as $db) 
-    {
-      $object = $this->_getNote($db);
-      $ret[] = $object;
+        parent::__construct($database);
+        $this->userManager = $userManager;
+        $this->fileManager = $fileManager;
+        //$this->teamManager = $teamManager;
+        //$this->labelManager = $labelManager;
     }
-    return $ret;    
-  }  
 
-  private function _getProjectList($projectId) 
-  {
-    $labels = $this->database->table('project_label')->where('project_id', $projectId)->fetchPairs('label_id', 'label_id');
-    $ret = [];
-    $resultDb = $this->database->table('note')->where(':project_note.project_id', $projectId)->order('created DESC');
-    foreach ($resultDb as $db) 
+    /* DB TO ENTITY */
+
+    public function _getNote($db)
     {
-      $object = $this->_getNote($db);
-      // Labels
-      foreach ($db->related('note_label')->where('label_id', $labels) as $labelDb)
-       {
-        $label = $this->labelManager->_getLabel($labelDb->label);
-        if ($label) 
+        if ($db == false)
+            return false;
+
+        $object = new Note($db->id, $db->user_id, $db->title, $db->note, $db->color, $db->reminder, $db->archived, $db->created);
+        if ($db->ref('file'))
+            $object->setImage($this->fileManager->_getFile($db->ref('file')));
+
+        foreach ($db->related('note_user') as $userDb)
         {
-          $object->addLabel($label);
+            $user = $this->userManager->_getUser($userDb->user);
+            if ($user)
+                $object->addUser($user);
         }
-      }  
-      $ret[] = $object;
-    }
-    return $ret;    
-  }  
-
-  private function _getUserList($userId) 
-  {
-    $labels = $this->database->table('label')->where('user_id', $userId)->fetchPairs('id', 'id');
-    $ret = [];
-    $resultDb = $this->database->table('note')->where('user_id', $userId)->order('created DESC');
-    foreach ($resultDb as $db) 
-    {
-      $object = $this->_getNote($db);
-      // Labels
-      foreach ($db->related('note_label')->where('label_id', $labels) as $labelDb) 
-      {
-        $label = $this->labelManager->_getLabel($labelDb->label);
-        if ($label) 
+        foreach ($db->related('note_team') as $teamDb)
         {
-          $object->addLabel($label);
+            $team = $this->teamManager->_getTeam($teamDb->team);
+            if ($team)
+                $object->addTeam($team);
         }
-      }       
-      $ret[] = $object;
-    }
-    return $ret;    
-  } 
-
-  private function _getUserProjectList($userId) 
-  {
-    $projects = $this->database->table('project_user')->where('user_id', $userId)->fetchPairs('project_id', 'role');
-    $projectLabels = $this->database->table('project_label')->where('project_id', array_keys($projects))->fetchPairs('label_id', 'label_id');
-    $userLabels = $this->database->table('label')->where('user_id', $userId)->fetchPairs('id', 'id');
-    $labels = array_merge($projectLabels, $userLabels);
-    $ret = [];
-    $resultDb = $this->database->table('note')->where(':project_note.project_id', array_keys($projects))->order('created DESC');
-    foreach ($resultDb as $db) 
-    {
-      $object = $this->_getNote($db);
-      $projectDb = $db->related('project_note')->fetch();
-      if ($projectDb && array_key_exists($projectDb->project_id, $projects)) 
-      {
-        $object->setProjectId($projectDb->project_id); 
-        $role = $projects[$projectDb->project_id];
-        if ($role != "manager" && $role != "owner") 
+        foreach ($db->related('note_category') as $categoryDb)
         {
-          $object->setEditable(false);
-        } 
-      } 
-      else 
-      {
-        $object->setEditable(false);
-      }
-      // Labels
-      foreach ($db->related('note_label')->where('label_id', $labels) as $labelDb) 
-      {
-        $label = $this->labelManager->_getLabel($labelDb->label);
-        if ($label) 
-        {
-          $object->addLabel($label);
+            $category = $this->teamManager->_getTeam($categoryDb->category);
+            if ($category)
+                $object->addCategory($category);
         }
-      }   
-      $ret[] = $object;
+        return $object;
     }
-    return $ret;    
-  } 
 
-  private function _getUserProjectRecentList($userId) 
-  {
-    $projects = $this->database->table('project_user')->where('user_id', $userId)->fetchPairs('project_id', 'project_id');
-    $projectLabels = $this->database->table('project_label')->where('project_id', $projects)->fetchPairs('label_id', 'label_id');
-    $userLabels = $this->database->table('label')->where('user_id', $userId)->fetchPairs('id', 'id');
-    $labels = array_merge($projectLabels, $userLabels);
-    $ret = [];
-    $resultDb = $this->database->table('note')->where(':project_note.project_id', $projects)->where('UNIX_TIMESTAMP(created) > (UNIX_TIMESTAMP(NOW()) - 24 * 60 * 60)')->order('created DESC');
-    foreach ($resultDb as $db) 
+    /* INTERNAL/EXTERNAL INTERFACE */
+
+    public function _getById($id)
     {
-      $object = $this->_getNote($db);
-      // Labels
-      foreach ($db->related('note_label')->where('label_id', $labels) as $labelDb) 
-      {
-        $label = $this->labelManager->_getLabel($labelDb->label);
-        if ($label) 
+        $resultDb = $this->database->table('note')->get($id);
+        return $this->_getNote($resultDb);
+    }
+
+    private function _getList()
+    {
+        $ret = array();
+        $resultDb = $this->database->table('note')->order('created DESC');
+        foreach ($resultDb as $db)
         {
-          $object->addLabel($label);
+            $object = $this->_getNote($db);
+            $ret[] = $object;
         }
-      }   
-      $ret[] = $object;
+        return $ret;
     }
-    return $ret;    
-  } 
 
-  private function _canUserEdit($id, $userId)
-  {
-    $db = $this->database->table('note')->get($id);
-    if (!$db)
+    private function _getProjectList($projectId)
     {
-      return false;
+        $labels = $this->database->table('project_label')->where('project_id', $projectId)->fetchPairs('label_id', 'label_id');
+        $ret = [];
+        $resultDb = $this->database->table('note')->where(':project_note.project_id', $projectId)->order('created DESC');
+        foreach ($resultDb as $db)
+        {
+            $object = $this->_getNote($db);
+            // Labels
+            foreach ($db->related('note_label')->where('label_id', $labels) as $labelDb)
+            {
+                $label = $this->labelManager->_getLabel($labelDb->label);
+                if ($label)
+                {
+                    $object->addLabel($label);
+                }
+            }
+            $ret[] = $object;
+        }
+        return $ret;
     }
-    if ($db->user_id === $userId)
+
+    private function _getUserList($userId)
     {
-      return true;
+        $labels = $this->database->table('label')->where('user_id', $userId)->fetchPairs('id', 'id');
+        $ret = [];
+        $resultDb = $this->database->table('note')->where('user_id', $userId)->order('created DESC');
+        foreach ($resultDb as $db)
+        {
+            $object = $this->_getNote($db);
+            // Labels
+            foreach ($db->related('note_label')->where('label_id', $labels) as $labelDb)
+            {
+                $label = $this->labelManager->_getLabel($labelDb->label);
+                if ($label)
+                {
+                    $object->addLabel($label);
+                }
+            }
+            $ret[] = $object;
+        }
+        return $ret;
     }
-    $projectsInManagement = $this->database->table('project_user')->where('user_id', $userId)->where('role', array('owner', 'manager'))->fetchPairs('project_id', 'project_id');
-    $projects = $this->database->table('project_note')->where('note_id', $id)->fetchPairs('project_id', 'project_id');
-    return (!empty(array_intersect($projects, $projectsInManagement))) ? true : false;
-  }
 
-  private function _getUserCount($userId) 
-  {
-    return $this->database->table('note')->where('note.user_id ? OR :note_user.user_id ?', $userId, $userId)->count("DISTINCT(note.id)");  
-  } 
+    private function _getUserProjectList($userId)
+    {
+        $projects = $this->database->table('project_user')->where('user_id', $userId)->fetchPairs('project_id', 'role');
+        $projectLabels = $this->database->table('project_label')->where('project_id', array_keys($projects))->fetchPairs('label_id', 'label_id');
+        $userLabels = $this->database->table('label')->where('user_id', $userId)->fetchPairs('id', 'id');
+        $labels = array_merge($projectLabels, $userLabels);
+        $ret = [];
+        $resultDb = $this->database->table('note')->where(':project_note.project_id', array_keys($projects))->order('created DESC');
+        foreach ($resultDb as $db)
+        {
+            $object = $this->_getNote($db);
+            $projectDb = $db->related('project_note')->fetch();
+            if ($projectDb && array_key_exists($projectDb->project_id, $projects))
+            {
+                $object->setProjectId($projectDb->project_id);
+                $role = $projects[$projectDb->project_id];
+                if ($role != "manager" && $role != "owner")
+                {
+                    $object->setEditable(false);
+                }
+            }
+            else
+            {
+                $object->setEditable(false);
+            }
+            // Labels
+            foreach ($db->related('note_label')->where('label_id', $labels) as $labelDb)
+            {
+                $label = $this->labelManager->_getLabel($labelDb->label);
+                if ($label)
+                {
+                    $object->addLabel($label);
+                }
+            }
+            $ret[] = $object;
+        }
+        return $ret;
+    }
 
-  private function _getUserPersonalCount($userId) 
-  {
-    return $this->database->table('note')->where('note.user_id', $userId)->count("DISTINCT(note.id)");  
-  } 
+    private function _getUserProjectRecentList($userId)
+    {
+        $projects = $this->database->table('project_user')->where('user_id', $userId)->fetchPairs('project_id', 'project_id');
+        $projectLabels = $this->database->table('project_label')->where('project_id', $projects)->fetchPairs('label_id', 'label_id');
+        $userLabels = $this->database->table('label')->where('user_id', $userId)->fetchPairs('id', 'id');
+        $labels = array_merge($projectLabels, $userLabels);
+        $ret = [];
+        $resultDb = $this->database->table('note')->where(':project_note.project_id', $projects)->where('UNIX_TIMESTAMP(created) > (UNIX_TIMESTAMP(NOW()) - 24 * 60 * 60)')->order('created DESC');
+        foreach ($resultDb as $db)
+        {
+            $object = $this->_getNote($db);
+            // Labels
+            foreach ($db->related('note_label')->where('label_id', $labels) as $labelDb)
+            {
+                $label = $this->labelManager->_getLabel($labelDb->label);
+                if ($label)
+                {
+                    $object->addLabel($label);
+                }
+            }
+            $ret[] = $object;
+        }
+        return $ret;
+    }
 
-  /* EXTERNAL METHOD */
+    private function _canUserEdit($id, $userId)
+    {
+        $db = $this->database->table('note')->get($id);
+        if (!$db)
+        {
+            return false;
+        }
+        if ($db->user_id === $userId)
+        {
+            return true;
+        }
+        $projectsInManagement = $this->database->table('project_user')->where('user_id', $userId)->where('role', array('owner', 'manager'))->fetchPairs('project_id', 'project_id');
+        $projects = $this->database->table('project_note')->where('note_id', $id)->fetchPairs('project_id', 'project_id');
+        return (!empty(array_intersect($projects, $projectsInManagement))) ? true : false;
+    }
 
-  public function getById($id) 
-  {
-    return $this->_getById($id);
-  }
+    private function _getUserCount($userId)
+    {
+        return $this->database->table('note')->where('note.user_id ? OR :note_user.user_id ?', $userId, $userId)->count("DISTINCT(note.id)");
+    }
 
-  public function getList() 
-  {
-    return $this->_getList();
-  }
+    private function _getUserPersonalCount($userId)
+    {
+        return $this->database->table('note')->where('note.user_id', $userId)->count("DISTINCT(note.id)");
+    }
 
-  public function getProjectList($projectId) 
-  {
-    return $this->_getProjectList($projectId);
-  }
+    /* EXTERNAL METHOD */
 
-  public function getUserList($userId) 
-  {
-    return $this->_getUserList($userId);
-  }
+    public function getById($id)
+    {
+        return $this->_getById($id);
+    }
 
-  public function getUserProjectList($userId) 
-  {
-    return $this->_getUserProjectList($userId);
-  }
+    public function getList()
+    {
+        return $this->_getList();
+    }
 
-  public function getUserCount($userId) 
-  {
-    return $this->_getUserCount($userId);
-  }
+    public function getProjectList($projectId)
+    {
+        return $this->_getProjectList($projectId);
+    }
 
-  public function getUserPersonalCount($userId) 
-  {
-    return $this->_getUserPersonalCount($userId);
-  }
+    public function getUserList($userId)
+    {
+        return $this->_getUserList($userId);
+    }
 
-  public function getUserProjectRecentList($userId) 
-  {
-    return $this->_getUserProjectRecentList($userId);
-  }
+    public function getUserProjectList($userId)
+    {
+        return $this->_getUserProjectList($userId);
+    }
 
-  public function canUserEdit($id, $userId)
-  {
-    return $this->_canUserEdit($id, $userId);
-  }
+    public function getUserCount($userId)
+    {
+        return $this->_getUserCount($userId);
+    }
+
+    public function getUserPersonalCount($userId)
+    {
+        return $this->_getUserPersonalCount($userId);
+    }
+
+    public function getUserProjectRecentList($userId)
+    {
+        return $this->_getUserProjectRecentList($userId);
+    }
+
+    public function canUserEdit($id, $userId)
+    {
+        return $this->_canUserEdit($id, $userId);
+    }
+
 }
-

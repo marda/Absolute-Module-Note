@@ -27,9 +27,11 @@ class LabelPresenter extends NoteBasePresenter
         switch ($this->httpRequest->getMethod())
         {
             case 'GET':
-                if (!isset($resourceId)){
+                if (!isset($resourceId))
+                {
                     $this->httpResponse->setCode(Response::S400_BAD_REQUEST);
-                }else
+                }
+                else
                 {
                     if (isset($subResourceId))
                     {
@@ -61,10 +63,14 @@ class LabelPresenter extends NoteBasePresenter
         if (!$notesList)
         {
             $this->httpResponse->setCode(Response::S404_NOT_FOUND);
+            $this->jsonResponse->payload=$notesList;
         }
         else
         {
-            $this->jsonResponse->payload = $notesList;
+            $this->jsonResponse->payload = array_map(function($n)
+            {
+                return $n->toJson();
+            }, $notesList);
             $this->httpResponse->setCode(Response::S200_OK);
         }
     }
@@ -78,18 +84,13 @@ class LabelPresenter extends NoteBasePresenter
         }
         else
         {
-            $this->jsonResponse->payload = $ret;
+            $this->jsonResponse->payload = $ret->toJson();
             $this->httpResponse->setCode(Response::S200_OK);
         }
     }
 
     private function _postNoteLabelRequest($urlId, $urlId2)
     {
-        if (!isset($urlId) || !isset($urlId2))
-        {
-            $this->httpResponse->setCode(Response::S400_BAD_REQUEST);
-            return;
-        }
         $ret = $this->labelManager->labelNoteCreate($urlId, $urlId2);
         if (!$ret)
         {
@@ -105,11 +106,6 @@ class LabelPresenter extends NoteBasePresenter
 
     private function _deleteNoteLabelRequest($urlId, $urlId2)
     {
-        if (!isset($urlId) || !isset($urlId2))
-        {
-            $this->httpResponse->setCode(Response::S400_BAD_REQUEST);
-            return;
-        }
         $ret = $this->labelManager->labelNoteDelete($urlId, $urlId2);
         if (!$ret)
         {
