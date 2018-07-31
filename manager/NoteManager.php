@@ -91,17 +91,32 @@ class NoteManager extends BaseManager
         {
             $object = $this->_getNote($db);
             // Labels
-            foreach ($db->related('note_label')->where('label_id', $labels) as $labelDb)
+            /*foreach ($db->related('note_label')->where('label_id', $labels) as $labelDb)
             {
                 $label = $this->labelManager->_getLabel($labelDb->label);
                 if ($label)
                 {
                     $object->addLabel($label);
                 }
-            }
+            }*/
             $ret[] = $object;
         }
         return $ret;
+    }
+
+    private function _getProjectItem($projectId, $noteId)
+    {
+        return $this->_getNote($this->database->table('note')->where(':project_note.project_id', $projectId)->where("note_id", $noteId)->fetch());
+    }
+
+    public function _noteProjectDelete($projectId, $noteId)
+    {
+        return $this->database->table('project_note')->where('project_id', $projectId)->where('note_id', $noteId)->delete();
+    }
+
+    public function _noteProjectCreate($projectId, $noteId)
+    {
+        return $this->database->table('project_note')->insert(['project_id' => $projectId, 'note_id' => $noteId]);
     }
 
     private function _getUserList($userId)
@@ -214,6 +229,21 @@ class NoteManager extends BaseManager
     private function _getUserPersonalCount($userId)
     {
         return $this->database->table('note')->where('note.user_id', $userId)->count("DISTINCT(note.id)");
+    }
+
+    public function getProjectItem($projectId, $noteId)
+    {
+        return $this->_getProjectItem($projectId, $noteId);
+    }
+
+    public function noteProjectDelete($projectId, $noteId)
+    {
+        return $this->_noteProjectDelete($projectId, $noteId);
+    }
+
+    public function noteProjectCreate($projectId, $noteId)
+    {
+        return $this->_noteProjectCreate($projectId, $noteId);
     }
 
     /* EXTERNAL METHOD */
